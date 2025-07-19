@@ -1,0 +1,385 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "description": "Benchmark solutions for MFSU equation validation",
+    "equation": "∂ψ/∂t = α(-Δ)^(α/2)ψ + β ξ_H(x,t)ψ - γψ³ + f(x,t)",
+    "created": "2025-07-19",
+    "coordinate_system": "cartesian",
+    "units": {
+      "time": "dimensionless",
+      "space": "dimensionless", 
+      "amplitude": "dimensionless"
+    }
+  },
+  
+  "test_cases": {
+    "linear_fractional_diffusion": {
+      "description": "Linear fractional diffusion without nonlinear and stochastic terms",
+      "parameters": {
+        "alpha": 1.5,
+        "beta": 0.0,
+        "gamma": 0.0,
+        "hurst": 0.5,
+        "forcing_amplitude": 0.0
+      },
+      "initial_condition": {
+        "type": "gaussian",
+        "amplitude": 1.0,
+        "width": 1.0,
+        "center": 0.0,
+        "expression": "exp(-x²/2)"
+      },
+      "domain": {
+        "x_min": -10.0,
+        "x_max": 10.0,
+        "t_min": 0.0,
+        "t_max": 5.0,
+        "nx": 201,
+        "nt": 501
+      },
+      "analytical_solution": {
+        "type": "fractional_gaussian",
+        "expression": "(2*sqrt(π)*t^(α/2)*Γ(1+α/2))^(-1) * exp(-|x|^2 / (4*t^(α/2)))",
+        "reference": "Fractional diffusion literature"
+      },
+      "tolerance": 1e-6
+    },
+
+    "soliton_solution": {
+      "description": "Soliton solution for nonlinear MFSU without stochastic term",
+      "parameters": {
+        "alpha": 2.0,
+        "beta": 0.0,
+        "gamma": 1.0,
+        "hurst": 0.5,
+        "forcing_amplitude": 0.0
+      },
+      "initial_condition": {
+        "type": "sech_soliton",
+        "amplitude": 1.0,
+        "width": 1.0,
+        "velocity": 0.5,
+        "center": 0.0,
+        "expression": "sech(x)"
+      },
+      "domain": {
+        "x_min": -20.0,
+        "x_max": 20.0,
+        "t_min": 0.0,
+        "t_max": 10.0,
+        "nx": 401,
+        "nt": 1001
+      },
+      "analytical_solution": {
+        "type": "traveling_soliton",
+        "expression": "sech(x - v*t) * exp(i*(k*x - ω*t))",
+        "reference": "Nonlinear Schrödinger solitons"
+      },
+      "tolerance": 1e-5
+    },
+
+    "harmonic_oscillator": {
+      "description": "Quantum harmonic oscillator ground state",
+      "parameters": {
+        "alpha": 2.0,
+        "beta": 0.0,
+        "gamma": 0.0,
+        "hurst": 0.5,
+        "forcing_amplitude": 0.0
+      },
+      "initial_condition": {
+        "type": "harmonic_ground_state",
+        "amplitude": 1.0,
+        "frequency": 1.0,
+        "expression": "exp(-x²/2)"
+      },
+      "domain": {
+        "x_min": -5.0,
+        "x_max": 5.0,
+        "t_min": 0.0,
+        "t_max": 2.0,
+        "nx": 101,
+        "nt": 201
+      },
+      "analytical_solution": {
+        "type": "stationary_state",
+        "expression": "exp(-x²/2) * exp(-i*ω*t/2)",
+        "reference": "Quantum mechanics textbook"
+      },
+      "tolerance": 1e-7
+    },
+
+    "plane_wave": {
+      "description": "Free particle plane wave solution",
+      "parameters": {
+        "alpha": 2.0,
+        "beta": 0.0,
+        "gamma": 0.0,
+        "hurst": 0.5,
+        "forcing_amplitude": 0.0
+      },
+      "initial_condition": {
+        "type": "plane_wave",
+        "amplitude": 1.0,
+        "wavenumber": 1.0,
+        "phase": 0.0,
+        "expression": "exp(i*k*x)"
+      },
+      "domain": {
+        "x_min": 0.0,
+        "x_max": 10.0,
+        "t_min": 0.0,
+        "t_max": 5.0,
+        "nx": 101,
+        "nt": 501
+      },
+      "analytical_solution": {
+        "type": "dispersive_wave",
+        "expression": "exp(i*(k*x - k^α*t))",
+        "reference": "Free particle dispersion relation"
+      },
+      "tolerance": 1e-6
+    },
+
+    "forced_oscillation": {
+      "description": "Driven system with external forcing",
+      "parameters": {
+        "alpha": 2.0,
+        "beta": 0.0,
+        "gamma": 0.1,
+        "hurst": 0.5,
+        "forcing_amplitude": 0.1
+      },
+      "initial_condition": {
+        "type": "zero",
+        "amplitude": 0.0,
+        "expression": "0"
+      },
+      "forcing_function": {
+        "type": "sinusoidal",
+        "amplitude": 0.1,
+        "frequency": 1.0,
+        "expression": "A*sin(ω*t)*exp(-x²/4)"
+      },
+      "domain": {
+        "x_min": -5.0,
+        "x_max": 5.0,
+        "t_min": 0.0,
+        "t_max": 10.0,
+        "nx": 101,
+        "nt": 1001
+      },
+      "analytical_solution": {
+        "type": "driven_response",
+        "expression": "Green's function convolution",
+        "reference": "Linear response theory"
+      },
+      "tolerance": 1e-4
+    }
+  },
+
+  "application_specific_cases": {
+    "superconductivity": {
+      "ginzburg_landau": {
+        "description": "Ginzburg-Landau like solution for superconductivity",
+        "parameters": {
+          "alpha": 1.8,
+          "beta": 0.05,
+          "gamma": 0.5,
+          "hurst": 0.7,
+          "temperature": 10.0,
+          "coherence_length": 1.0
+        },
+        "initial_condition": {
+          "type": "tanh_profile",
+          "amplitude": 1.0,
+          "width": 2.0,
+          "expression": "tanh(x/ξ)"
+        },
+        "domain": {
+          "x_min": -10.0,
+          "x_max": 10.0,
+          "t_min": 0.0,
+          "t_max": 5.0,
+          "nx": 201,
+          "nt": 501
+        },
+        "tolerance": 1e-5
+      }
+    },
+
+    "gas_dynamics": {
+      "shock_wave": {
+        "description": "Shock wave solution for gas dynamics",
+        "parameters": {
+          "alpha": 1.6,
+          "beta": 0.1,
+          "gamma": 0.2,
+          "hurst": 0.8,
+          "mach_number": 1.5,
+          "reynolds_number": 1000
+        },
+        "initial_condition": {
+          "type": "step_function",
+          "amplitude": 1.0,
+          "transition_width": 0.5,
+          "expression": "0.5*(1 + tanh(x/δ))"
+        },
+        "domain": {
+          "x_min": -15.0,
+          "x_max": 15.0,
+          "t_min": 0.0,
+          "t_max": 8.0,
+          "nx": 301,
+          "nt": 801
+        },
+        "tolerance": 1e-4
+      }
+    },
+
+    "cosmology": {
+      "friedmann_solution": {
+        "description": "Cosmological perturbation evolution",
+        "parameters": {
+          "alpha": 1.4,
+          "beta": 0.02,
+          "gamma": 0.01,
+          "hurst": 0.9,
+          "hubble_constant": 70.0,
+          "omega_matter": 0.3
+        },
+        "initial_condition": {
+          "type": "power_law_spectrum",
+          "amplitude": 1e-5,
+          "spectral_index": 0.96,
+          "expression": "A*k^n"
+        },
+        "domain": {
+          "x_min": 0.1,
+          "x_max": 100.0,
+          "t_min": 0.0,
+          "t_max": 13.8,
+          "nx": 200,
+          "nt": 1380
+        },
+        "tolerance": 1e-6
+      }
+    }
+  },
+
+  "stochastic_test_cases": {
+    "white_noise_response": {
+      "description": "Response to white noise forcing",
+      "parameters": {
+        "alpha": 1.5,
+        "beta": 0.1,
+        "gamma": 0.0,
+        "hurst": 0.5,
+        "noise_amplitude": 0.01
+      },
+      "statistical_properties": {
+        "mean": 0.0,
+        "variance": "analytical_formula",
+        "correlation_function": "exponential_decay",
+        "power_spectrum": "1/f^α scaling"
+      },
+      "domain": {
+        "x_min": -10.0,
+        "x_max": 10.0,
+        "t_min": 0.0,
+        "t_max": 100.0,
+        "nx": 201,
+        "nt": 10001
+      },
+      "tolerance": 5e-2,
+      "ensemble_size": 1000
+    },
+
+    "fractional_brownian_motion": {
+      "description": "Response to fractional Brownian motion",
+      "parameters": {
+        "alpha": 2.0,
+        "beta": 0.05,
+        "gamma": 0.0,
+        "hurst": 0.7,
+        "noise_amplitude": 0.1
+      },
+      "statistical_properties": {
+        "hurst_exponent": 0.7,
+        "scaling_behavior": "t^H",
+        "long_range_dependence": true
+      },
+      "domain": {
+        "x_min": -5.0,
+        "x_max": 5.0,
+        "t_min": 0.0,
+        "t_max": 50.0,
+        "nx": 101,
+        "nt": 5001
+      },
+      "tolerance": 1e-1,
+      "ensemble_size": 500
+    }
+  },
+
+  "numerical_validation": {
+    "convergence_tests": {
+      "spatial_convergence": {
+        "grid_sizes": [50, 100, 200, 400],
+        "expected_order": 2,
+        "tolerance": 1e-3
+      },
+      "temporal_convergence": {
+        "time_steps": [0.1, 0.05, 0.025, 0.0125],
+        "expected_order": 1,
+        "tolerance": 1e-3
+      }
+    },
+
+    "conservation_laws": {
+      "mass_conservation": {
+        "tolerance": 1e-10,
+        "test_duration": 10.0
+      },
+      "energy_conservation": {
+        "tolerance": 1e-8,
+        "test_duration": 10.0
+      }
+    },
+
+    "stability_tests": {
+      "cfl_condition": {
+        "max_dt": "dx²/2α",
+        "safety_factor": 0.5
+      },
+      "long_time_stability": {
+        "test_duration": 1000.0,
+        "growth_rate_tolerance": 1e-6
+      }
+    }
+  },
+
+  "references": [
+    {
+      "id": "fractional_diffusion_2019",
+      "title": "Fractional Diffusion Equations and Anomalous Diffusion",
+      "authors": ["Metzler, R.", "Klafter, J."],
+      "journal": "Physics Reports",
+      "year": 2019
+    },
+    {
+      "id": "stochastic_pde_2020", 
+      "title": "Stochastic Partial Differential Equations",
+      "authors": ["Da Prato, G.", "Zabczyk, J."],
+      "publisher": "Cambridge University Press",
+      "year": 2020
+    },
+    {
+      "id": "nonlinear_schrodinger_2018",
+      "title": "Nonlinear Schrödinger Equations and Their Applications", 
+      "authors": ["Sulem, C.", "Sulem, P.L."],
+      "publisher": "Springer",
+      "year": 2018
+    }
+  ]
+}
