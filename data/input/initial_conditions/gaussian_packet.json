@@ -1,0 +1,157 @@
+{
+  "metadata": {
+    "name": "Gaussian Wave Packet",
+    "description": "Initial conditions for a Gaussian wave packet in MFSU simulation",
+    "version": "1.0.0",
+    "created": "2024",
+    "author": "MFSU Development Team",
+    "equation_type": "MFSU",
+    "dimensions": 1,
+    "complex_field": true
+  },
+  
+  "spatial_domain": {
+    "x_min": -10.0,
+    "x_max": 10.0,
+    "grid_points": 256,
+    "boundary_conditions": "periodic"
+  },
+  
+  "temporal_domain": {
+    "t_initial": 0.0,
+    "dt": 0.01,
+    "max_time": 10.0
+  },
+  
+  "gaussian_parameters": {
+    "amplitude": {
+      "real": 1.0,
+      "imaginary": 0.0,
+      "description": "Peak amplitude of the Gaussian packet"
+    },
+    "center": {
+      "x0": 0.0,
+      "description": "Initial center position of the packet"
+    },
+    "width": {
+      "sigma": 1.0,
+      "description": "Standard deviation (width parameter) of the Gaussian"
+    },
+    "momentum": {
+      "k0": 1.0,
+      "description": "Initial wave number (momentum) of the packet"
+    },
+    "phase": {
+      "phi0": 0.0,
+      "description": "Initial phase of the wave packet"
+    }
+  },
+  
+  "mfsu_parameters": {
+    "fractional": {
+      "alpha": 1.5,
+      "description": "Fractional derivative order (1 < alpha <= 2)"
+    },
+    "stochastic": {
+      "beta": 0.1,
+      "hurst_exponent": 0.7,
+      "noise_intensity": 0.01,
+      "description": "Stochastic process parameters for ξ_H(x,t)"
+    },
+    "nonlinear": {
+      "gamma": 0.05,
+      "description": "Nonlinear coefficient for cubic term"
+    }
+  },
+  
+  "initial_field": {
+    "type": "analytical",
+    "formula": "A * exp(-(x-x0)²/(2σ²)) * exp(i*(k0*x + phi0))",
+    "normalization": "L2",
+    "energy_conservation": true
+  },
+  
+  "stochastic_initialization": {
+    "random_seed": 42,
+    "noise_type": "fractional_brownian",
+    "spatial_correlation": true,
+    "temporal_correlation": false
+  },
+  
+  "physical_interpretation": {
+    "application": "general",
+    "units": {
+      "length": "characteristic_length",
+      "time": "characteristic_time",
+      "field": "normalized"
+    },
+    "conservation_laws": [
+      "mass",
+      "momentum",
+      "energy"
+    ]
+  },
+  
+  "numerical_settings": {
+    "discretization": "fourier_spectral",
+    "time_integration": "runge_kutta_4",
+    "stability_condition": "cfl_adaptive",
+    "precision": "double"
+  },
+  
+  "validation": {
+    "analytical_solution": false,
+    "benchmark_available": true,
+    "expected_behavior": [
+      "packet_dispersion",
+      "nonlinear_effects",
+      "stochastic_fluctuations"
+    ]
+  },
+  
+  "output_settings": {
+    "save_frequency": 10,
+    "observables": [
+      "field_magnitude",
+      "phase",
+      "energy_density",
+      "momentum_density"
+    ],
+    "analysis_tools": [
+      "fractal_dimension",
+      "spectral_analysis",
+      "statistical_moments"
+    ]
+  },
+  
+  "examples": {
+    "narrow_packet": {
+      "sigma": 0.5,
+      "k0": 2.0,
+      "description": "Narrow, high-momentum packet for dispersion studies"
+    },
+    "broad_packet": {
+      "sigma": 2.0,
+      "k0": 0.5,
+      "description": "Broad, low-momentum packet for nonlinear studies"
+    },
+    "moving_packet": {
+      "x0": -5.0,
+      "k0": 1.5,
+      "description": "Initially displaced packet with momentum"
+    }
+  },
+  
+  "compatibility": {
+    "applications": [
+      "superconductivity",
+      "gas_dynamics",
+      "cosmology"
+    ],
+    "analysis_modules": [
+      "fractal_analysis",
+      "spectral_analysis",
+      "statistical_analysis"
+    ]
+  }
+}
