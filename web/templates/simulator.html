@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MFSU Simulator - Modelo Fractal Estocástico Unificado</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.26.0/plotly.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #00d4ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .mfsu-formula {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            padding: 1rem;
+            border-radius: 15px;
+            margin: 1rem auto;
+            max-width: 600px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 1.2rem;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+            padding: 2rem;
+            height: calc(100vh - 200px);
+        }
+
+        .control-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .visualization-area {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .param-group {
+            margin-bottom: 2rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1.5rem;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .param-group h3 {
+            color: #00ff88;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            border-bottom: 2px solid #00ff88;
+            padding-bottom: 0.5rem;
+        }
+
+        .param-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            gap: 1rem;
+        }
+
+        .param-row label {
+            min-width: 80px;
+            font-weight: 600;
+            color: #00d4ff;
+        }
+
+        .param-row input {
+            flex: 1;
+            padding: 0.7rem;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .param-row input:focus {
+            outline: none;
+            border-color: #00ff88;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+
+        .param-row select {
+            flex: 1;
+            padding: 0.7rem;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #00ff88, #00d4ff);
+            color: #000;
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.6);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #ff6b6b, #ffa500);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.6);
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #ff4757, #ff3838);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+        }
+
+        .control-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .plot-container {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 15px;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .plot-tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px 10px 0 0;
+            overflow: hidden;
+        }
+
+        .plot-tab {
+            flex: 1;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .plot-tab.active {
+            background: linear-gradient(45deg, #00ff88, #00d4ff);
+            color: #000;
+        }
+
+        .plot-content {
+            height: 400px;
+            padding: 1rem;
+        }
+
+        .status-bar {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            text-align: center;
+            border-radius: 0 0 15px 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #00ff88;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #00ff88, #00d4ff);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            
+            .control-panel {
+                order: 2;
+            }
+        }
+
+        .equation-display {
+            font-family: 'Times New Roman', serif;
+            font-size: 1.1em;
+            text-align: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>MFSU Simulator</h1>
+        <p>Modelo Fractal Estocástico Unificado</p>
+        <div class="mfsu-formula">
+            <div class="equation-display">
+                ∂ψ/∂t = α(-Δ)^(α/2)ψ + β ξ<sub>H</sub>(x,t)ψ - γψ³ + f(x,t)
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="control-panel">
+            <div class="param-group">
+                <h3>Parámetros MFSU</h3>
+                <div class="param-row">
+                    <label>α:</label>
+                    <input type="number" id="alpha" value="0.5" step="0.1" min="0.1" max="2.0">
+                </div>
+                <div class="param-row">
+                    <label>β:</label>
+                    <input type="number" id="beta" value="0.1" step="0.01" min="0.01" max="1.0">
+                </div>
+                <div class="param-row">
+                    <label>γ:</label>
+                    <input type="number" id="gamma" value="0.01" step="0.001" min="0.001" max="0.1">
+                </div>
+                <div class="param-row">
+                    <label>Hurst:</label>
+                    <input type="number" id="hurst" value="0.7" step="0.1" min="0.1" max="0.9">
+                </div>
+            </div>
+
+            <div class="param-group">
+                <h3>Parámetros Numéricos</h3>
+                <div class="param-row">
+                    <label>dt:</label>
+                    <input type="number" id="dt" value="0.01" step="0.001" min="0.001" max="0.1">
+                </div>
+                <div class="param-row">
+                    <label>dx:</label>
+                    <input type="number" id="dx" value="0.1" step="0.01" min="0.01" max="1.0">
+                </div>
+                <div class="param-row">
+                    <label>Grid Size:</label>
+                    <input type="number" id="grid_size" value="100" step="10" min="50" max="500">
+                </div>
+                <div class="param-row">
+                    <label>Max Time:</label>
+                    <input type="number" id="max_time" value="10.0" step="1.0" min="1.0" max="100.0">
+                </div>
+            </div>
+
+            <div class="param-group">
+                <h3>Aplicación</h3>
+                <div class="param-row">
+                    <label>Tipo:</label>
+                    <select id="application_type">
+                        <option value="superconductivity">Superconductividad</option>
+                        <option value="gas_dynamics">Dinámica de Gases</option>
+                        <option value="cosmology">Cosmología</option>
+                        <option value="general">General</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="param-group">
+                <h3>Condiciones Iniciales</h3>
+                <div class="param-row">
+                    <label>Tipo:</label>
+                    <select id="initial_condition">
+                        <option value="gaussian">Paquete Gaussiano</option>
+                        <option value="soliton">Perfil Solitónico</option>
+                        <option value="random">Campo Aleatorio</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="control-buttons">
+                <button class="btn btn-primary" onclick="startSimulation()">
+                    Iniciar Simulación
+                </button>
+                <button class="btn btn-secondary" onclick="pauseSimulation()">
+                    Pausar
+                </button>
+                <button class="btn btn-danger" onclick="stopSimulation()">
+                    Detener
+                </button>
+                <button class="btn btn-secondary" onclick="exportResults()">
+                    Exportar
+                </button>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress"></div>
+            </div>
+        </div>
+
+        <div class="visualization-area">
+            <div class="plot-tabs">
+                <button class="plot-tab active" onclick="switchTab('field')">Campo ψ</button>
+                <button class="plot-tab" onclick="switchTab('spectrum')">Espectro</button>
+                <button class="plot-tab" onclick="switchTab('fractal')">Análisis Fractal</button>
+                <button class="plot-tab" onclick="switchTab('stats')">Estadísticas</button>
+            </div>
+
+            <div class="plot-container">
+                <div id="field-plot" class="plot-content"></div>
+                <div id="spectrum-plot" class="plot-content" style="display: none;"></div>
+                <div id="fractal-plot" class="plot-content" style="display: none;"></div>
+                <div id="stats-plot" class="plot-content" style="display: none;"></div>
+            </div>
+
+            <div class="status-bar">
+                <span id="status">Listo para simular</span>
+                <span id="loading" class="loading" style="display: none;"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let simulationRunning = false;
+        let simulationData = {};
+        let currentTime = 0;
+        let animationId = null;
+
+        // Inicialización de plots
+        function initializePlots() {
+            // Plot del campo
+            Plotly.newPlot('field-plot', [{
+                z: generateInitialField(),
+                type: 'heatmap',
+                colorscale: 'Viridis',
+                showscale: true
+            }], {
+                title: 'Campo ψ(x,y,t)',
+                xaxis: { title: 'x' },
+                yaxis: { title: 'y' },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: 'white' }
+            });
+
+            // Plot del espectro
+            Plotly.newPlot('spectrum-plot', [{
+                x: [],
+                y: [],
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Espectro de Potencia'
+            }], {
+                title: 'Espectro de Potencia',
+                xaxis: { title: 'k', type: 'log' },
+                yaxis: { title: 'P(k)', type: 'log' },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: 'white' }
+            });
+
+            // Plot fractal
+            Plotly.newPlot('fractal-plot', [{
+                x: [],
+                y: [],
+                type: 'scatter',
+                mode: 'markers+lines',
+                name: 'Dimensión Fractal'
+            }], {
+                title: 'Análisis de Dimensión Fractal',
+                xaxis: { title: 'Escala' },
+                yaxis: { title: 'D_fractal' },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: 'white' }
+            });
+
+            // Plot estadísticas
+            Plotly.newPlot('stats-plot', [{
+                x: [],
+                y: [],
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Energía'
+            }, {
+                x: [],
+                y: [],
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Entropía',
+                yaxis: 'y2'
+            }], {
+                title: 'Estadísticas del Sistema',
+                xaxis: { title: 'Tiempo' },
+                yaxis: { title: 'Energía' },
+                yaxis2: {
+                    title: 'Entropía',
+                    overlaying: 'y',
+                    side: 'right'
+                },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: 'white' }
+            });
+        }
+
+        function generateInitialField() {
+            const size = parseInt(document.getElementById('grid_size').value);
+            const field = [];
+            
+            for (let i = 0; i < size; i++) {
+                field[i] = [];
+                for (let j = 0; j < size; j++) {
+                    const x = (i - size/2) * 0.1;
+                    const y = (j - size/2) * 0.1;
+                    
+                    // Paquete gaussiano inicial
+                    field[i][j] = Math.exp(-(x*x + y*y) / 2) * Math.cos(x);
+                }
+            }
+            return field;
+        }
+
+        function switchTab(tabName) {
+            // Ocultar todos los plots
+            document.querySelectorAll('.plot-content').forEach(plot => {
+                plot.style.display = 'none';
+            });
+            
+            // Remover clase activa de todas las tabs
+            document.querySelectorAll('.plot-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Mostrar el plot seleccionado
+            document.getElementById(tabName + '-plot').style.display = 'block';
+            
+            // Activar la tab seleccionada
+            event.target.classList.add('active');
+        }
+
+        function startSimulation() {
+            if (simulationRunning) return;
+            
+            simulationRunning = true;
+            currentTime = 0;
+            document.getElementById('status').textContent = 'Simulación en ejecución...';
+            document.getElementById('loading').style.display = 'inline-block';
+            
+            // Obtener parámetros
+            const params = {
+                alpha: parseFloat(document.getElementById('alpha').value),
+                beta: parseFloat(document.getElementById('beta').value),
+                gamma: parseFloat(document.getElementById('gamma').value),
+                hurst: parseFloat(document.getElementById('hurst').value),
+                dt: parseFloat(document.getElementById('dt').value),
+                dx: parseFloat(document.getElementById('dx').value),
+                grid_size: parseInt(document.getElementById('grid_size').value),
+                max_time: parseFloat(document.getElementById('max_time').value),
+                application: document.getElementById('application_type').value,
+                initial_condition: document.getElementById('initial_condition').value
+            };
+            
+            // Enviar solicitud al backend
+            fetch('/api/start_simulation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(params)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'started') {
+                    animateSimulation();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('status').textContent = 'Error al iniciar simulación';
+                simulationRunning = false;
+                document.getElementById('loading').style.display = 'none';
+            });
+        }
+
+        function pauseSimulation() {
+            simulationRunning = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            document.getElementById('status').textContent = 'Simulación pausada';
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function stopSimulation() {
+            simulationRunning = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            currentTime = 0;
+            document.getElementById('progress').style.width = '0%';
+            document.getElementById('status').textContent = 'Simulación detenida';
+            document.getElementById('loading').style.display = 'none';
+            
+            fetch('/api/stop_simulation', { method: 'POST' });
+        }
+
+        function exportResults() {
+            if (Object.keys(simulationData).length === 0) {
+                alert('No hay datos para exportar');
+                return;
+            }
+            
+            fetch('/api/export_results', { method: 'POST' })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'mfsu_results.zip';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            });
+        }
+
+        function animateSimulation() {
+            if (!simulationRunning) return;
+            
+            fetch('/api/get_simulation_data')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'running') {
+                    updatePlots(data);
+                    currentTime = data.time;
+                    
+                    const progress = (currentTime / parseFloat(document.getElementById('max_time').value)) * 100;
+                    document.getElementById('progress').style.width = progress + '%';
+                    
+                    animationId = requestAnimationFrame(() => {
+                        setTimeout(animateSimulation, 50); // 20 FPS
+                    });
+                } else if (data.status === 'completed') {
+                    simulationRunning = false;
+                    document.getElementById('status').textContent = 'Simulación completada';
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('progress').style.width = '100%';
+                }
+            });
+        }
+
+        function updatePlots(data) {
+            // Actualizar plot del campo
+            Plotly.restyle('field-plot', {
+                z: [data.field]
+            }, [0]);
+            
+            // Actualizar espectro
+            if (data.spectrum) {
+                Plotly.restyle('spectrum-plot', {
+                    x: [data.spectrum.k],
+                    y: [data.spectrum.power]
+                }, [0]);
+            }
+            
+            // Actualizar estadísticas
+            if (data.stats) {
+                simulationData.time = simulationData.time || [];
+                simulationData.energy = simulationData.energy || [];
+                simulationData.entropy = simulationData.entropy || [];
+                
+                simulationData.time.push(data.time);
+                simulationData.energy.push(data.stats.energy);
+                simulationData.entropy.push(data.stats.entropy);
+                
+                Plotly.restyle('stats-plot', {
+                    x: [simulationData.time, simulationData.time],
+                    y: [simulationData.energy, simulationData.entropy]
+                }, [0, 1]);
+            }
+        }
+
+        // Inicializar cuando se carga la página
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePlots();
+        });
+
+        // Responsive design
+        window.addEventListener('resize', function() {
+            Plotly.Plots.resize('field-plot');
+            Plotly.Plots.resize('spectrum-plot');
+            Plotly.Plots.resize('fractal-plot');
+            Plotly.Plots.resize('stats-plot');
+        });
+    </script>
+</body>
+</html>
