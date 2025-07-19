@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MFSU Simulator - Modelo Fractal Estocástico Unificado</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.26.0/plotly.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .formula-container {
+            background: #f8f9ff;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 2px solid #e3e8ff;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .formula {
+            font-size: 1.5rem;
+            font-family: 'Times New Roman', serif;
+            color: #2c3e50;
+            margin: 15px 0;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+        }
+        
+        .parameter-legend {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #555;
+        }
+        
+        .parameter-legend div {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .control-panel {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            height: fit-content;
+        }
+        
+        .control-panel h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .parameter-group {
+            margin-bottom: 25px;
+        }
+        
+        .parameter-group label {
+            display: block;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+        }
+        
+        .parameter-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .parameter-input input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e3e8ff;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        
+        .parameter-input input:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .parameter-input span {
+            font-size: 0.8rem;
+            color: #666;
+            min-width: 60px;
+        }
+        
+        .application-selector {
+            margin-bottom: 20px;
+        }
+        
+        .application-selector select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e3e8ff;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+        }
+        
+        .control-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #555;
+            border: 2px solid #e3e8ff;
+        }
+        
+        .btn-secondary:hover {
+            background: #e9ecef;
+            transform: translateY(-1px);
+        }
+        
+        .visualization-panel {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .viz-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 5px;
+        }
+        
+        .viz-tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        
+        .viz-tab.active {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .plot-container {
+            height: 500px;
+            border: 2px solid #e3e8ff;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            background: white;
+        }
+        
+        .status-bar {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .formula {
+                font-size: 1.2rem;
+                padding: 15px;
+            }
+            
+            .control-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-wave-square"></i> MFSU Simulator</h1>
+            <p style="font-size: 1.1rem; color: #666; margin-bottom: 20px;">
+                Modelo Fractal Estocástico Unificado para Simulación de Sistemas Complejos
+            </p>
+            
+            <div class="formula-container">
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">Ecuación MFSU</h3>
+                <div class="formula">
+                    ∂ψ/∂t = α(-Δ)^(α/2)ψ + β ξ_H(x,t)ψ - γψ³ + f(x,t)
+                </div>
+                <div class="parameter-legend">
+                    <div><strong>α:</strong> Parámetro fractal</div>
+                    <div><strong>β:</strong> Intensidad estocástica</div>
+                    <div><strong>γ:</strong> No linealidad</div>
+                    <div><strong>ξ_H:</strong> Ruido fractal</div>
+                    <div><strong>f(x,t):</strong> Forzado externo</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="control-panel">
+                <h3><i class="fas fa-cogs"></i> Parámetros de Simulación</h3>
+                
+                <div class="application-selector">
+                    <label>Aplicación:</label>
+                    <select id="application" onchange="updateParameters()">
+                        <option value="general">General</option>
+                        <option value="superconductivity">Superconductividad</option>
+                        <option value="gas_dynamics">Dinámica de Gases</option>
+                        <option value="cosmology">Cosmología</option>
+                    </select>
+                </div>
+                
+                <div class="parameter-group">
+                    <h4>Parámetros de la Ecuación</h4>
+                    <div class="parameter-input">
+                        <label>α (Fractal):</label>
+                        <input type="range" id="alpha" min="0.1" max="2" step="0.1" value="0.5" oninput="updateValue('alpha')">
+                        <span id="alpha-value">0.5</span>
+                    </div>
+                    
+                    <div class="parameter-input">
+                        <label>β (Estocástico):</label>
+                        <input type="range" id="beta" min="0" max="1" step="0.01" value="0.1" oninput="updateValue('beta')">
+                        <span id="beta-value">0.1</span>
+                    </div>
+                    
+                    <div class="parameter-input">
+                        <label>γ (No lineal):</label>
+                        <input type="range" id="gamma" min="0" max="0.1" step="0.001" value="0.01" oninput="updateValue('gamma')">
+                        <span id="gamma-value">0.01</span>
+                    </div>
+                    
+                    <div class="parameter-input">
+                        <label>H (Hurst):</label>
+                        <input type="range" id="hurst" min="0.1" max="0.9" step="0.05" value="0.7" oninput="updateValue('hurst')">
+                        <span id="hurst-value">0.7</span>
+                    </div>
+                </div>
+                
+                <div class="parameter-group">
+                    <h4>Parámetros Numéricos</h4>
+                    <div class="parameter-input">
+                        <label>Δt:</label>
+                        <input type="number" id="dt" value="0.01" step="0.001" min="0.001">
+                    </div>
+                    
+                    <div class="parameter-input">
+                        <label>Δx:</label>
+                        <input type="number" id="dx" value="0.1" step="0.01" min="0.01">
+                    </div>
+                    
+                    <div class="parameter-input">
+                        <label>Tamaño de Grid:</label>
+                        <input type="number" id="grid_size" value="100" step="10" min="50" max="500">
+                    </div>
+                    
+                    <div class="parameter-input">
+                        <label>Tiempo Máximo:</label>
+                        <input type="number" id="max_time" value="10.0" step="0.5" min="1.0">
+                    </div>
+                </div>
+                
+                <div class="control-buttons">
+                    <button class="btn btn-primary" onclick="startSimulation()">
+                        <i class="fas fa-play"></i> Iniciar
+                    </button>
+                    <button class="btn btn-secondary" onclick="resetSimulation()">
+                        <i class="fas fa-stop"></i> Reset
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportData()" style="grid-column: 1 / -1;">
+                        <i class="fas fa-download"></i> Exportar Datos
+                    </button>
+                </div>
+            </div>
+            
+            <div class="visualization-panel">
+                <h3><i class="fas fa-chart-line"></i> Visualización</h3>
+                
+                <div class="viz-tabs">
+                    <div class="viz-tab active" onclick="switchTab('field')">Campo ψ</div>
+                    <div class="viz-tab" onclick="switchTab('spectrum')">Espectro</div>
+                    <div class="viz-tab" onclick="switchTab('fractal')">Análisis Fractal</div>
+                </div>
+                
+                <div class="plot-container">
+                    <div id="field-plot" class="plot-area"></div>
+                    <div id="spectrum-plot" class="plot-area" style="display: none;"></div>
+                    <div id="fractal-plot" class="plot-area" style="display: none;"></div>
+                    
+                    <div id="loading" class="loading">
+                        <div class="spinner"></div>
+                        <p>Ejecutando simulación MFSU...</p>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 15px; margin-top: 15px;">
+                    <button class="btn btn-secondary" onclick="saveVisualization()">
+                        <i class="fas fa-camera"></i> Captura
+                    </button>
+                    <button class="btn btn-secondary" onclick="toggleAnimation()">
+                        <i class="fas fa-play-circle"></i> Animación
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-indicator"></div>
+                <span>Estado: <span id="status">Listo</span></span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-clock"></i>
+                <span>Tiempo: <span id="sim-time">0.00s</span></span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Progreso: <span id="progress">0%</span></span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-memory"></i>
+                <span>Memoria: <span id="memory">0 MB</span></span>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/plotly_integration.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/parameter_controls.js') }}"></script>
+    
+    <script>
+        // Variables globales
+        let simulationRunning = false;
+        let animationId = null;
+        let currentData = null;
+        
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePlots();
+            updateParameters();
+        });
+        
+        // Funciones de control de parámetros
+        function updateValue(paramId) {
+            const slider = document.getElementById(paramId);
+            const valueSpan = document.getElementById(paramId + '-value');
+            valueSpan.textContent = parseFloat(slider.value).toFixed(3);
+        }
+        
+        function updateParameters() {
+            const app = document.getElementById('application').value;
+            // Aquí se pueden cargar parámetros predefinidos según la aplicación
+            console.log(`Cambiando a aplicación: ${app}`);
+        }
+        
+        // Funciones de simulación
+        async function startSimulation() {
+            if (simulationRunning) return;
+            
+            simulationRunning = true;
+            document.getElementById('status').textContent = 'Ejecutando';
+            document.getElementById('loading').style.display = 'block';
+            
+            const parameters = gatherParameters();
+            
+            try {
+                const response = await fetch('/api/simulate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(parameters)
+                });
+                
+                const result = await response.json();
+                currentData = result;
+                updateVisualization(result);
+                
+                document.getElementById('status').textContent = 'Completado';
+            } catch (error) {
+                console.error('Error en simulación:', error);
+                document.getElementById('status').textContent = 'Error';
+            } finally {
+                simulationRunning = false;
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+        
+        function resetSimulation() {
+            simulationRunning = false;
+            currentData = null;
+            document.getElementById('status').textContent = 'Listo';
+            document.getElementById('sim-time').textContent = '0.00s';
+            document.getElementById('progress').textContent = '0%';
+            initializePlots();
+        }
+        
+        function gatherParameters() {
+            return {
+                alpha: parseFloat(document.getElementById('alpha').value),
+                beta: parseFloat(document.getElementById('beta').value),
+                gamma: parseFloat(document.getElementById('gamma').value),
+                hurst: parseFloat(document.getElementById('hurst').value),
+                dt: parseFloat(document.getElementById('dt').value),
+                dx: parseFloat(document.getElementById('dx').value),
+                grid_size: parseInt(document.getElementById('grid_size').value),
+                max_time: parseFloat(document.getElementById('max_time').value),
+                application: document.getElementById('application').value
+            };
+        }
+        
+        // Funciones de visualización
+        function switchTab(tabName) {
+            // Remover clase active de todas las pestañas
+            document.querySelectorAll('.viz-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Ocultar todas las áreas de plot
+            document.querySelectorAll('.plot-area').forEach(area => {
+                area.style.display = 'none';
+            });
+            
+            // Activar la pestaña seleccionada
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-plot').style.display = 'block';
+            
+            // Actualizar visualización si hay datos
+            if (currentData) {
+                updateVisualization(currentData, tabName);
+            }
+        }
+        
+        function initializePlots() {
+            // Inicializar plots vacíos
+            Plotly.newPlot('field-plot', [], {
+                title: 'Campo ψ(x,t)',
+                xaxis: { title: 'Posición x' },
+                yaxis: { title: 'ψ' }
+            });
+            
+            Plotly.newPlot('spectrum-plot', [], {
+                title: 'Espectro de Potencia',
+                xaxis: { title: 'Frecuencia k', type: 'log' },
+                yaxis: { title: 'P(k)', type: 'log' }
+            });
+            
+            Plotly.newPlot('fractal-plot', [], {
+                title: 'Dimensión Fractal',
+                xaxis: { title: 'log(r)' },
+                yaxis: { title: 'log(N(r))' }
+            });
+        }
+        
+        function updateVisualization(data, activeTab = null) {
+            // Implementar actualización de gráficos con datos reales
+            console.log('Actualizando visualización con:', data);
+        }
+        
+        function saveVisualization() {
+            const activeTab = document.querySelector('.viz-tab.active').textContent;
+            console.log(`Guardando visualización: ${activeTab}`);
+        }
+        
+        function toggleAnimation() {
+            console.log('Toggle animation');
+        }
+        
+        function exportData() {
+            if (currentData) {
+                const dataStr = JSON.stringify(currentData, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'mfsu_simulation_data.json';
+                link.click();
+                URL.revokeObjectURL(url);
+            }
+        }
+    </script>
+</body>
+</html>
