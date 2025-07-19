@@ -1,0 +1,272 @@
+{
+  "metadata": {
+    "name": "Fractional Soliton Profile",
+    "description": "Initial conditions for soliton solutions in MFSU simulation",
+    "version": "1.0.0",
+    "created": "2024",
+    "author": "MFSU Development Team",
+    "equation_type": "MFSU",
+    "dimensions": 1,
+    "complex_field": true
+  },
+  
+  "spatial_domain": {
+    "x_min": -20.0,
+    "x_max": 20.0,
+    "grid_points": 512,
+    "boundary_conditions": "absorbing"
+  },
+  
+  "temporal_domain": {
+    "t_initial": 0.0,
+    "dt": 0.005,
+    "max_time": 20.0
+  },
+  
+  "soliton_parameters": {
+    "amplitude": {
+      "A": 2.0,
+      "description": "Peak amplitude of the soliton"
+    },
+    "width": {
+      "xi": 1.5,
+      "description": "Characteristic width parameter (inverse of steepness)"
+    },
+    "center": {
+      "x0": 0.0,
+      "description": "Initial center position of the soliton"
+    },
+    "velocity": {
+      "v": 0.5,
+      "description": "Propagation velocity of the soliton"
+    },
+    "phase": {
+      "theta0": 0.0,
+      "description": "Initial phase of the soliton"
+    }
+  },
+  
+  "soliton_types": {
+    "bright": {
+      "formula": "A * sech((x-x0)/xi) * exp(i*(v*x - omega*t + theta0))",
+      "description": "Bright soliton (localized intensity maximum)",
+      "stability": "stable",
+      "energy_finite": true
+    },
+    "dark": {
+      "formula": "A * tanh((x-x0)/xi) * exp(i*(v*x - omega*t + theta0))",
+      "description": "Dark soliton (localized intensity minimum)",
+      "stability": "stable",
+      "background_required": true
+    },
+    "fractional_bright": {
+      "formula": "A * sech^(2/alpha)((x-x0)/xi) * exp(i*(v*x - omega*t + theta0))",
+      "description": "Fractional bright soliton for MFSU equation",
+      "stability": "conditional",
+      "alpha_dependent": true
+    }
+  },
+  
+  "mfsu_parameters": {
+    "fractional": {
+      "alpha": 1.8,
+      "description": "Fractional derivative order (1 < alpha <= 2) - affects soliton shape"
+    },
+    "stochastic": {
+      "beta": 0.05,
+      "hurst_exponent": 0.6,
+      "noise_intensity": 0.005,
+      "spatial_correlation_length": 0.1,
+      "description": "Weak stochastic perturbations to preserve soliton integrity"
+    },
+    "nonlinear": {
+      "gamma": 0.1,
+      "description": "Nonlinear coefficient - balances dispersion for soliton existence"
+    },
+    "external_force": {
+      "f_type": "none",
+      "description": "External forcing (usually none for pure soliton solutions)"
+    }
+  },
+  
+  "dispersion_relation": {
+    "omega_formula": "v^2/2 + (A^2 * gamma)/(2^alpha * Gamma(alpha+1))",
+    "description": "Frequency relation for soliton propagation in fractional medium",
+    "nonlinear_correction": true
+  },
+  
+  "stability_analysis": {
+    "linear_stability": {
+      "eigenvalue_threshold": 0.01,
+      "perturbation_modes": 10
+    },
+    "nonlinear_stability": {
+      "amplitude_tolerance": 0.1,
+      "velocity_tolerance": 0.05
+    },
+    "stochastic_robustness": {
+      "noise_threshold": 0.02,
+      "coherence_time": 100.0
+    }
+  },
+  
+  "initial_field": {
+    "type": "analytical",
+    "default_profile": "fractional_bright",
+    "normalization": "energy",
+    "perturbations": {
+      "add_noise": false,
+      "noise_amplitude": 0.01,
+      "noise_type": "white"
+    }
+  },
+  
+  "numerical_settings": {
+    "discretization": "fourier_spectral",
+    "time_integration": "split_step_fourier",
+    "nonlinear_treatment": "explicit",
+    "fractional_method": "riesz_fft",
+    "precision": "double"
+  },
+  
+  "conservation_laws": {
+    "mass": {
+      "formula": "integral |psi|^2 dx",
+      "conserved": true,
+      "tolerance": 1e-6
+    },
+    "momentum": {
+      "formula": "i/2 * integral (psi* dpsi/dx - psi dpsi*/dx) dx",
+      "conserved": true,
+      "tolerance": 1e-6
+    },
+    "energy": {
+      "formula": "Kinetic + Potential + Nonlinear",
+      "conserved": false,
+      "stochastic_fluctuations": true
+    }
+  },
+  
+  "multi_soliton_configurations": {
+    "two_soliton": {
+      "separation": 8.0,
+      "amplitude_ratio": 1.0,
+      "phase_difference": 0.0,
+      "interaction_type": "elastic"
+    },
+    "soliton_train": {
+      "num_solitons": 3,
+      "spacing": 6.0,
+      "amplitude_decay": 0.8,
+      "phase_pattern": "linear"
+    }
+  },
+  
+  "physical_applications": {
+    "superconductivity": {
+      "interpretation": "Josephson vortex",
+      "relevant_parameters": ["alpha", "gamma"],
+      "characteristic_length": "coherence_length"
+    },
+    "gas_dynamics": {
+      "interpretation": "Density wave",
+      "relevant_parameters": ["v", "A"],
+      "characteristic_length": "correlation_length"
+    },
+    "cosmology": {
+      "interpretation": "Scalar field lump",
+      "relevant_parameters": ["alpha", "beta"],
+      "characteristic_length": "horizon_scale"
+    }
+  },
+  
+  "validation": {
+    "analytical_benchmarks": {
+      "classical_nls": true,
+      "fractional_nls": true,
+      "stochastic_nls": false
+    },
+    "numerical_benchmarks": {
+      "propagation_distance": 50.0,
+      "amplitude_preservation": 0.95,
+      "shape_preservation": 0.90
+    }
+  },
+  
+  "output_settings": {
+    "save_frequency": 5,
+    "observables": [
+      "soliton_amplitude",
+      "soliton_position",
+      "soliton_velocity",
+      "soliton_width",
+      "energy_flow"
+    ],
+    "tracking": {
+      "center_of_mass": true,
+      "peak_tracking": true,
+      "phase_tracking": true
+    }
+  },
+  
+  "examples": {
+    "slow_bright": {
+      "A": 1.0,
+      "v": 0.1,
+      "xi": 2.0,
+      "alpha": 1.5,
+      "description": "Slow-moving bright soliton for detailed analysis"
+    },
+    "fast_narrow": {
+      "A": 3.0,
+      "v": 1.0,
+      "xi": 0.8,
+      "alpha": 1.9,
+      "description": "Fast, narrow soliton for collision studies"
+    },
+    "fractional_regime": {
+      "A": 1.5,
+      "v": 0.3,
+      "xi": 1.2,
+      "alpha": 1.3,
+      "description": "Strong fractional effects regime"
+    },
+    "stochastic_perturbed": {
+      "A": 2.0,
+      "v": 0.4,
+      "xi": 1.0,
+      "beta": 0.1,
+      "description": "Soliton under stochastic perturbations"
+    }
+  },
+  
+  "advanced_features": {
+    "adaptive_grid": {
+      "enabled": true,
+      "refinement_criterion": "gradient_based",
+      "max_levels": 3
+    },
+    "collision_detection": {
+      "enabled": true,
+      "threshold": 0.1,
+      "analysis_type": "phase_shift"
+    },
+    "breather_modes": {
+      "enabled": false,
+      "modulation_frequency": 0.1
+    }
+  },
+  
+  "compatibility": {
+    "applications": [
+      "superconductivity",
+      "gas_dynamics", 
+      "cosmology"
+    ],
+    "analysis_modules": [
+      "fractal_analysis",
+      "spectral_analysis",
+      "soliton_tracking"
+    ]
+  }
+}
