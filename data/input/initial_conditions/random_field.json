@@ -1,0 +1,281 @@
+{
+  "metadata": {
+    "name": "Random Field Initial Conditions",
+    "description": "Condiciones iniciales para campos aleatorios en el simulador MFSU",
+    "version": "1.0.0",
+    "created": "2025-01-19",
+    "compatible_with": "MFSU-Simulator v1.0.0"
+  },
+  
+  "field_configurations": {
+    "fractal_noise": {
+      "description": "Campo aleatorio con características fractales",
+      "type": "fractal_brownian_motion",
+      "parameters": {
+        "hurst_exponent": 0.7,
+        "lacunarity": 2.0,
+        "octaves": 6,
+        "persistence": 0.5,
+        "amplitude": 1.0,
+        "frequency": 0.1,
+        "seed": 42
+      },
+      "spatial_config": {
+        "dimension": 2,
+        "grid_size": [100, 100],
+        "domain": {
+          "x_range": [-10.0, 10.0],
+          "y_range": [-10.0, 10.0]
+        }
+      },
+      "normalization": {
+        "method": "gaussian",
+        "mean": 0.0,
+        "std_dev": 0.1
+      }
+    },
+    
+    "perlin_noise": {
+      "description": "Campo suave basado en ruido de Perlin",
+      "type": "perlin_noise",
+      "parameters": {
+        "scale": 0.5,
+        "octaves": 4,
+        "persistence": 0.6,
+        "lacunarity": 2.0,
+        "amplitude": 0.8,
+        "seed": 123
+      },
+      "spatial_config": {
+        "dimension": 2,
+        "grid_size": [100, 100],
+        "domain": {
+          "x_range": [-5.0, 5.0],
+          "y_range": [-5.0, 5.0]
+        }
+      },
+      "modulation": {
+        "envelope": "gaussian",
+        "envelope_params": {
+          "center": [0.0, 0.0],
+          "sigma": 2.0
+        }
+      }
+    },
+    
+    "multifractal_field": {
+      "description": "Campo multifractal para capturar escalamiento complejo",
+      "type": "multifractal",
+      "parameters": {
+        "intermittency": 0.2,
+        "scaling_exponents": [0.3, 0.5, 0.7],
+        "moments": [2, 4, 6],
+        "resolution": 256,
+        "seed": 456
+      },
+      "spatial_config": {
+        "dimension": 2,
+        "grid_size": [128, 128],
+        "domain": {
+          "x_range": [-8.0, 8.0],
+          "y_range": [-8.0, 8.0]
+        }
+      },
+      "spectral_properties": {
+        "power_law_exponent": -2.5,
+        "cutoff_frequency": 0.01,
+        "energy_cascade": true
+      }
+    },
+    
+    "colored_noise": {
+      "description": "Ruido coloreado con espectro específico",
+      "type": "colored_noise",
+      "parameters": {
+        "spectral_exponent": -1.5,
+        "amplitude": 0.5,
+        "frequency_range": [0.001, 0.5],
+        "phase_randomization": true,
+        "seed": 789
+      },
+      "spatial_config": {
+        "dimension": 1,
+        "grid_size": [512],
+        "domain": {
+          "x_range": [-20.0, 20.0]
+        }
+      },
+      "temporal_evolution": {
+        "time_correlation": 0.1,
+        "drift_coefficient": 0.01
+      }
+    },
+    
+    "stochastic_texture": {
+      "description": "Textura estocástica para condiciones realistas",
+      "type": "stochastic_texture",
+      "parameters": {
+        "correlation_length": 1.5,
+        "variance": 0.25,
+        "anisotropy": {
+          "ratio": 1.2,
+          "angle": 0.0
+        },
+        "seed": 101112
+      },
+      "spatial_config": {
+        "dimension": 2,
+        "grid_size": [150, 150],
+        "domain": {
+          "x_range": [-12.0, 12.0],
+          "y_range": [-12.0, 12.0]
+        }
+      },
+      "boundary_conditions": {
+        "type": "periodic",
+        "transition_width": 0.1
+      }
+    }
+  },
+  
+  "composite_configurations": {
+    "superposition_field": {
+      "description": "Superposición de múltiples campos aleatorios",
+      "components": [
+        {
+          "field": "fractal_noise",
+          "weight": 0.6,
+          "phase_shift": 0.0
+        },
+        {
+          "field": "perlin_noise",
+          "weight": 0.3,
+          "phase_shift": 1.57
+        },
+        {
+          "field": "colored_noise",
+          "weight": 0.1,
+          "interpolation": "cubic"
+        }
+      ],
+      "mixing_function": "linear",
+      "normalization": {
+        "preserve_statistics": true,
+        "target_variance": 0.2
+      }
+    },
+    
+    "hierarchical_field": {
+      "description": "Campo jerárquico con múltiples escalas",
+      "scales": [
+        {
+          "scale_factor": 1.0,
+          "field_config": "multifractal_field",
+          "weight": 0.5
+        },
+        {
+          "scale_factor": 0.5,
+          "field_config": "fractal_noise",
+          "weight": 0.3
+        },
+        {
+          "scale_factor": 0.25,
+          "field_config": "perlin_noise",
+          "weight": 0.2
+        }
+      ],
+      "coherence": {
+        "cross_correlation": 0.1,
+        "phase_locking": false
+      }
+    }
+  },
+  
+  "physical_applications": {
+    "superconductivity": {
+      "description": "Campo aleatorio para fluctuaciones cuánticas",
+      "base_config": "fractal_noise",
+      "modifications": {
+        "hurst_exponent": 0.8,
+        "amplitude": 0.05,
+        "correlation_length": 0.5
+      },
+      "physical_units": {
+        "amplitude_units": "meV",
+        "length_units": "nm",
+        "temperature_dependence": true
+      }
+    },
+    
+    "gas_dynamics": {
+      "description": "Fluctuaciones turbulentas iniciales",
+      "base_config": "multifractal_field",
+      "modifications": {
+        "intermittency": 0.3,
+        "reynolds_scaling": true,
+        "energy_injection_scale": 2.0
+      },
+      "physical_units": {
+        "velocity_units": "m/s",
+        "length_units": "m",
+        "density_fluctuations": 0.01
+      }
+    },
+    
+    "cosmology": {
+      "description": "Fluctuaciones primordiales de densidad",
+      "base_config": "colored_noise",
+      "modifications": {
+        "spectral_exponent": -0.96,
+        "amplitude": 1e-5,
+        "horizon_scale": true
+      },
+      "physical_units": {
+        "density_units": "critical_density",
+        "length_units": "Mpc",
+        "redshift_evolution": true
+      }
+    }
+  },
+  
+  "validation": {
+    "statistical_tests": {
+      "moments": [1, 2, 3, 4],
+      "correlation_function": true,
+      "power_spectrum": true,
+      "fractal_dimension": true
+    },
+    "benchmark_comparisons": [
+      "gaussian_random_field",
+      "log_normal_field",
+      "chi_squared_field"
+    ],
+    "convergence_criteria": {
+      "grid_independence": 0.01,
+      "statistical_stability": 0.05
+    }
+  },
+  
+  "output_format": {
+    "data_format": "hdf5",
+    "precision": "float64",
+    "compression": "gzip",
+    "metadata_inclusion": true,
+    "export_options": {
+      "vtk": true,
+      "numpy": true,
+      "matlab": false
+    }
+  },
+  
+  "execution": {
+    "parallel_generation": true,
+    "memory_optimization": true,
+    "progress_tracking": true,
+    "error_handling": {
+      "seed_validation": true,
+      "parameter_bounds_check": true,
+      "memory_limits": "auto"
+    }
+  }
+}
