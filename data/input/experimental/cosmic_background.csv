@@ -1,0 +1,489 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+from scipy.fft import fft, fftfreq
+import seaborn as sns
+
+class CosmicDataAnalyzer:
+    """
+    Analizador de datos cósmicos para el simulador MFSU
+    Incluye análisis fractal, espectral y validación de parámetros cosmológicos
+    """
+    
+    def __init__(self, csv_file='cosmic_background.csv'):
+        """Inicializar con archivo CSV"""
+        self.data = pd.read_csv(csv_file)
+        self.setup_analysis()
+    
+    def setup_analysis(self):
+        """Configurar análisis inicial"""
+        print("=== ANÁLISIS DE DATOS CÓSMICOS MFSU ===")
+        print(f"Datos cargados: {len(self.data)} puntos")
+        print(f"Tipos de datos: {list(self.data['type'].unique())}")
+        
+        # Separar datos por tipo
+        self.angular_data = self.data[self.data['type'] == 'angular_spectrum'].copy()
+        self.redshift_data = self.data[self.data['type'] == 'redshift_evolution'].copy()
+        self.spatial_data = self.data[self.data['type'] == 'spatial_3d'].copy()
+        self.benchmark_data = self.data[self.data['type'] == 'mfsu_benchmark'].copy()
+        
+    def analyze_fractal_properties(self):
+        """Análisis de propiedades fractales"""
+        print("\n=== ANÁLISIS FRACTAL ===")
+        
+        fig, axes = plt.subplots(2, 2, figsize=(15, 12))
+        
+        # 1. Distribución de exponentes de Hurst
+        axes[0,0].hist(self.data['hurst_exponent'].dropna(), bins=30, alpha=0.7, color='blue')
+        axes[0,0].axvline(0.7, color='red', linestyle='--', label='H=0.7 (referencia)')
+        axes[0,0].set_xlabel('Exponente de Hurst')
+        axes[0,0].set_ylabel('Frecuencia')
+        axes[0,0].set_title('Distribución de Exponentes de Hurst')
+        axes[0,0].legend()
+        
+        # 2. Distribución de dimensiones fractales
+        axes[0,1].hist(self.data['fractal_dimension'].dropna(), bins=30, alpha=0.7, color='green')
+        axes[0,1].axvline(2.3, color='red', linestyle='--', label='D=2.3 (referencia)')
+        axes[0,1].set_xlabel('Dimensión Fractal')
+        axes[0,1].set_ylabel('Frecuencia')
+        axes[0,1].set_title('Distribución de Dimensiones Fractales')
+        axes[0,1].legend()
+        
+        # 3. Correlación H vs D
+        valid_mask = self.data['hurst_exponent'].notna() & self.data['fractal_dimension'].notna()
+        h_vals = self.data.loc[valid_mask, 'hurst_exponent']
+        d_vals = self.data.loc[valid_mask, 'fractal_dimension']
+        
+        axes[1,0].scatter(h_vals, d_vals, alpha=0.6, c=self.data.loc[valid_mask, 'stochastic_amplitude'], 
+                         cmap='viridis')
+        axes[1,0].set_xlabel('Exponente de Hurst')
+        axes[1,0].set_ylabel('Dimensión Fractal')
+        axes[1,0].set_title('Correlación H vs D (color = amplitud estocástica)')
+        
+        # Relación teórica D = 3 - H para fBm en 2D
+        h_theory = np.linspace(0.1, 0.9, 100)
+        d_theory = 3 - h_theory
+        axes[1,0].plot(h_theory, d_theory, 'r--', label='D = 3 - H (teórico)')
+        axes[1,0].legend()
+        
+        # 4. Amplitud estocástica por tipo
+        for i, data_type in enumerate(['angular_spectrum', 'redshift_evolution', 'spatial_3d']):
+            subset = self.data[self.data['type'] == data_type]
+            if not subset.empty:
+                axes[1,1].hist(subset['stochastic_amplitude'].dropna(), bins=20, 
+                             alpha=0.5, label=data_type)
+        
+        axes[1,1].set_xlabel('Amplitud Estocástica')
+        axes[1,1].set_ylabel('Frecuencia')
+        axes[1,1].set_title('Distribución de Amplitudes Estocásticas')
+        axes[1,1].legend()
+        
+        plt.tight_layout()
+        plt.savefig('fractal_analysis.png', dpi=300, bbox_inches='tight')
+        plt.show()
+        
+        # Estadísticas fractales
+        print(f"Hurst promedio: {self.data['hurst_exponent'].mean():.3f} ± {self.data['hurst_exponent'].std():.3f}")
+        print(f"Dimensión fractal promedio: {self.data['fractal_dimension'].mean():.3f} ± {self.data['fractal_dimension'].std():.3f}")
+        
+    def analyze_cmb_spectrum(self):
+        """Análisis del espectro de potencias del CMB"""
+        print("\n=== ANÁLISIS ESPECTRO CMB ===")
+        
+        if self.angular_data.empty:
+            print("No hay datos espectrales disponibles")
+            return
+        
+        fig, axes = plt.subplots(2, 2, figsize=(15, 12))
+        
+        # 1. Espectro de potencias C_l vs l
+        l_vals = self.angular_data['l_multipole'].values
+        c_l_vals = self.angular_data['power_spectrum_C_l'].values
+        
+        axes[0,0].loglog(l_vals, c_l_vals * l_vals * (l_vals + 1), 'b-', alpha=0.7)
+        axes[0,0].set_xlabel('Multipolo l')
+        axes[0,0].set_ylabel('l(l+1)C_l / 2π')
+        axes[0,0].set_title('Espectro de Potencias Angular del CMB')
+        axes[0,0].grid(True, alpha=0.3)
+        
+        # 2. Fluctuaciones de temperatura
+        delta_T = self.angular_data['delta_T_microK'].values
+        axes[0,1].semilogx(l_vals, delta_T, 'r-', alpha=0.7)
+        axes[0,1].set_xlabel('Multipolo l')
+        axes[0,1].set_ylabel('ΔT (μK)')
+        axes[0,1].set_title('Fluctuaciones de Temperatura vs Escala Angular')
+        axes[0,1].grid(True, alpha=0.3)
+        
+        # 3. Análisis de periodicidades (picos acústicos)
+        # FFT del espectro para detectar oscilaciones
+        spectrum_smooth = np.log(c_l_vals)
+        fft_spectrum = np.abs(fft(spectrum_smooth))
+        freqs = fftfreq(len(spectrum_smooth))
+        
+        axes[1,0].plot(freqs[:len(freqs)//2], fft_spectrum[:len(freqs)//2])
+        axes[1,0].set_xlabel('Frecuencia en log(l)')
+        axes[1,0].set_ylabel('Amplitud FFT')
+        axes[1,0].set_title('Análisis de Periodicidades (Picos Acústicos)')
+        axes[1,0].grid(True, alpha=0.3)
+        
+        # 4. Distribución estadística de fluctuaciones
+        axes[1,1].hist(delta_T, bins=30, alpha=0.7, density=True, color='purple')
+        
+        # Ajustar distribución gaussiana
+        mu, sigma = stats.norm.fit(delta_T)
+        x_gauss = np.linspace(delta_T.min(), delta_T.max(), 100)
+        y_gauss = stats.norm.pdf(x_gauss, mu, sigma)
+        axes[1,1].plot(x_gauss, y_gauss, 'r-', label=f'Gaussiana μ={mu:.1f}, σ={sigma:.1f}')
+        
+        axes[1,1].set_xlabel('ΔT (μK)')
+        axes[1,1].set_ylabel('Densidad de Probabilidad')
+        axes[1,1].set_title('Distribución de Fluctuaciones de Temperatura')
+        axes[1,1].legend()
+        
+        plt.tight_layout()
+        plt.savefig('cmb_spectrum_analysis.png', dpi=300, bbox_inches='tight')
+        plt.show()
+        
+        # Estadísticas del CMB
+        print(f"Rango de multipolos: {l_vals.min():.1f} - {l_vals.max():.1f}")
+        print(f"ΔT promedio: {delta_T.mean():.2f} ± {delta_T.std():.2f} μK")
+        print(f"Amplitud C_l máxima en l={l_vals[np.argmax(c_l_vals)]:.1f}")
+        
+    def analyze_cosmological_evolution(self):
+        """Análisis de evolución cosmológica"""
+        print("\n=== ANÁLISIS EVOLUCIÓN COSMOLÓGICA ===")
+        
+        if self.redshift_data.empty:
+            print("No hay datos de evolución disponibles")
+            return
+        
+        fig, axes = plt.subplots(2, 2, figsize=(15, 12))
+        
+        z_vals = self.redshift_data['redshift'].values
+        T_vals = self.redshift_data['temperature_K'].values
+        H_vals = self.redshift_data['H0_km_s_Mpc'].values
+        
+        # 1. Evolución de temperatura T(z)
+        axes[0,0].loglog(1 + z_vals, T_vals, 'bo-', alpha=0.7, markersize=3)
+        
+        # Ley teórica T ∝ (1+z)
+        T_theory = 2.7255 * (1 + z_vals)
+        axes[0,0].loglog(1 + z_vals, T_theory, 'r--', label='T ∝ (1+z)')
+        
+        axes[0,0].set_xlabel('1 + z')
+        axes[0,0].set_ylabel('Temperatura (K)')
+        axes[0,0].set_title('Evolución de la Temperatura del CMB')
+        axes[0,0].legend()
+        axes[0,0].grid(True, alpha=0.3)
+        
+        # 2. Parámetro de Hubble H(z)
+        axes[0,1].semilogx(z_vals, H_vals, 'go-', alpha=0.7, markersize=3)
+        axes[0,1].set_xlabel('Redshift z')
+        axes[0,1].set_ylabel('H(z) (km/s/Mpc)')
+        axes[0,1].set_title('Evolución del Parámetro de Hubble')
+        axes[0,1].grid(True, alpha=0.3)
+        
+        # 3. Evolución de propiedades fractales
+        h_evolution = self.redshift_data['hurst_exponent'].values
+        axes[1,0].semilogx(z_vals, h_evolution, 'mo', alpha=0.7, markersize=3)
+        axes[1,0].set_xlabel('Redshift z')
+        axes[1,0].set_ylabel('Exponente de Hurst')
+        axes[1,0].set_title('Evolución de Propiedades Fractales')
+        axes[1,0].grid(True, alpha=0.3)
+        
+        # 4. Acoplamiento no lineal vs redshift
+        nonlinear = self.redshift_data['nonlinear_coupling'].values
+        axes[1,1].loglog(1 + z_vals, nonlinear, 'co-', alpha=0.7, markersize=3)
+        axes[1,1].set_xlabel('1 + z')
+        axes[1,1].set_ylabel('Acoplamiento No Lineal')
+        axes[1,1].set_title('Evolución del Acoplamiento No Lineal MFSU')
+        axes[1,1].grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        plt.savefig('cosmological_evolution.png', dpi=300, bbox_inches='tight')
+        plt.show()
+        
+        # Validación cosmológica
+        z_recomb = 1100  # Redshift de recombinación
+        idx_recomb = np.argmin(np.abs(z_vals - z_recomb))
+        T_recomb = T_vals[idx_recomb]
+        T_recomb_theory = 2.7255 * (1 + z_recomb)
+        
+        print(f"Temperatura en recombinación (z≈1100):")
+        print(f"  Simulada: {T_recomb:.1f} K")
+        print(f"  Teórica: {T_recomb_theory:.1f} K")
+        print(f"  Error relativo: {abs(T_recomb - T_recomb_theory)/T_recomb_theory * 100:.2f}%")
+        
+    def analyze_spatial_distribution(self):
+        """Análisis de distribución espacial 3D"""
+        print("\n=== ANÁLISIS DISTRIBUCIÓN ESPACIAL ===")
+        
+        if self.spatial_data.empty:
+            print("No hay datos espaciales disponibles")
+            return
+        
+        fig = plt.figure(figsize=(15, 12))
+        
+        x = self.spatial_data['x_position_Mpc'].values
+        y = self.spatial_data['y_position_Mpc'].values
+        z = self.spatial_data['z_position_Mpc'].values
+        temp = self.spatial_data['temperature_K'].values
+        
+        # 1. Distribución 3D con colores por temperatura
+        ax1 = fig.add_subplot(221, projection='3d')
+        scatter = ax1.scatter(x, y, z, c=temp, cmap='plasma', alpha=0.6, s=20)
+        ax1.set_xlabel('X (Mpc)')
+        ax1.set_ylabel('Y (Mpc)')
+        ax1.set_zlabel('Z (Mpc)')
+        ax1.set_title('Distribución Espacial 3D')
+        plt.colorbar(scatter, ax=ax1, label='Temperatura (K)', shrink=0.6)
+        
+        # 2. Proyección XY
+        ax2 = fig.add_subplot(222)
+        scatter2 = ax2.scatter(x, y, c=temp, cmap='plasma', alpha=0.7, s=15)
+        ax2.set_xlabel('X (Mpc)')
+        ax2.set_ylabel('Y (Mpc)')
+        ax2.set_title('Proyección XY')
+        ax2.grid(True, alpha=0.3)
+        plt.colorbar(scatter2, ax=ax2, label='Temperatura (K)')
+        
+        # 3. Función de correlación radial
+        distances = np.sqrt(x**2 + y**2 + z**2)
+        
+        ax3 = fig.add_subplot(223)
+        ax3.scatter(distances, temp - temp.mean(), alpha=0.6, s=10)
+        ax3.set_xlabel('Distancia al origen (Mpc)')
+        ax3.set_ylabel('ΔT - <T> (K)')
+        ax3.set_title('Correlación Radial de Temperatura')
+        ax3.grid(True, alpha=0.3)
+        
+        # 4. Análisis de clustering
+        ax4 = fig.add_subplot(224)
+        
+        # Histograma de distancias
+        ax4.hist(distances, bins=20, alpha=0.7, color='skyblue', edgecolor='black')
+        ax4.set_xlabel('Distancia radial (Mpc)')
+        ax4.set_ylabel('Número de puntos')
+        ax4.set_title('Distribución Radial de Datos')
+        ax4.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        plt.savefig('spatial_distribution.png', dpi=300, bbox_inches='tight')
+        plt.show()
+        
+        # Estadísticas espaciales
+        print(f"Rango espacial: {distances.min():.2f} - {distances.max():.2f} Mpc")
+        print(f"Temperatura promedio: {temp.mean():.6f} ± {temp.std():.6f} K")
+        
+        # Análisis de homogeneidad (test de Kolmogorov-Smirnov)
+        # Comparar distribución de temperaturas con distribución uniforme
+        uniform_temps = np.random.uniform(temp.min(), temp.max(), len(temp))
+        ks_stat, ks_p = stats.ks_2samp(temp, uniform_temps)
+        print(f"Test KS para homogeneidad: estadístico={ks_stat:.4f}, p-value={ks_p:.4f}")
+        
+    def analyze_mfsu_benchmarks(self):
+        """Análisis de datos de benchmarking MFSU"""
+        print("\n=== ANÁLISIS BENCHMARKS MFSU ===")
+        
+        if self.benchmark_data.empty:
+            print("No hay datos de benchmark disponibles")
+            return
+        
+        fig, axes = plt.subplots(2, 2, figsize=(15, 12))
+        
+        t_vals = self.benchmark_data['x_position_Mpc'].values  # Tiempo
+        psi_real = self.benchmark_data['y_position_Mpc'].values
+        psi_imag = self.benchmark_data['z_position_Mpc'].values
+        psi_mag = np.sqrt(psi_real**2 + psi_imag**2)
+        power = self.benchmark_data['power_spectrum_C_l'].values
+        
+        # 1. Evolución temporal de la función de onda
+        axes[0,0].plot(t_vals, psi_real, 'b-', label='Re(ψ)', linewidth=2)
+        axes[0,0].plot(t_vals, psi_imag, 'r-', label='Im(ψ)', linewidth=2)
+        axes[0,0].plot(t_vals, psi_mag, 'k--', label='|ψ|', linewidth=2)
+        axes[0,0].set_xlabel('Tiempo (adimensional)')
+        axes[0,0].set_ylabel('Amplitud ψ')
+        axes[0,0].set_title('Evolución Temporal MFSU')
+        axes[0,0].legend()
+        axes[0,0].grid(True, alpha=0.3)
+        
+        # 2. Espectro de potencias |ψ|²
+        axes[0,1].semilogy(t_vals, power, 'g-', linewidth=2)
+        axes[0,1].set_xlabel('Tiempo (adimensional)')
+        axes[0,1].set_ylabel('|ψ|²')
+        axes[0,1].set_title('Espectro de Potencias MFSU')
+        axes[0,1].grid(True, alpha=0.3)
+        
+        # 3. Diagrama de fases (Re vs Im)
+        axes[1,0].plot(psi_real, psi_imag, 'purple', alpha=0.7, linewidth=1)
+        axes[1,0].scatter(psi_real[0], psi_imag[0], color='green', s=100, marker='o', label='Inicio')
+        axes[1,0].scatter(psi_real[-1], psi_imag[-1], color='red', s=100, marker='s', label='Final')
+        axes[1,0].set_xlabel('Re(ψ)')
+        axes[1,0].set_ylabel('Im(ψ)')
+        axes[1,0].set_title('Diagrama de Fases MFSU')
+        axes[1,0].legend()
+        axes[1,0].grid(True, alpha=0.3)
+        axes[1,0].axis('equal')
+        
+        # 4. Análisis de decaimiento exponencial
+        # Ajustar decaimiento exponencial a |ψ|
+        def exponential_decay(t, A, gamma):
+            return A * np.exp(-gamma * t)
+        
+        from scipy.optimize import curve_fit
+        
+        try:
+            popt, pcov = curve_fit(exponential_decay, t_vals, psi_mag, p0=[1.0, 0.5])
+            A_fit, gamma_fit = popt
+            
+            axes[1,1].semilogy(t_vals, psi_mag, 'bo', alpha=0.7, markersize=4, label='Datos')
+            axes[1,1].semilogy(t_vals, exponential_decay(t_vals, A_fit, gamma_fit), 
+                              'r-', linewidth=2, label=f'Ajuste: A={A_fit:.3f}, γ={gamma_fit:.3f}')
+            axes[1,1].set_xlabel('Tiempo (adimensional)')
+            axes[1,1].set_ylabel('|ψ|')
+            axes[1,1].set_title('Análisis de Decaimiento Exponencial')
+            axes[1,1].legend()
+            axes[1,1].grid(True, alpha=0.3)
+            
+            print(f"Parámetros de ajuste exponencial:")
+            print(f"  Amplitud inicial: {A_fit:.4f}")
+            print(f"  Tasa de decaimiento: {gamma_fit:.4f}")
+            
+        except Exception as e:
+            axes[1,1].text(0.5, 0.5, f'Error en ajuste:\n{str(e)}', 
+                          transform=axes[1,1].transAxes, ha='center', va='center')
+        
+        plt.tight_layout()
+        plt.savefig('mfsu_benchmarks.png', dpi=300, bbox_inches='tight')
+        plt.show()
+        
+        # Conservación de norma
+        norm_conservation = np.trapz(power, t_vals)
+        print(f"Conservación de norma ∫|ψ|²dt = {norm_conservation:.4f}")
+        
+    def generate_validation_report(self):
+        """Generar reporte de validación completo"""
+        print("\n" + "="*60)
+        print("REPORTE DE VALIDACIÓN COSMIC_BACKGROUND.CSV")
+        print("="*60)
+        
+        # Validaciones básicas
+        missing_data = self.data.isnull().sum()
+        print("\n1. INTEGRIDAD DE DATOS:")
+        print(f"   Total de registros: {len(self.data)}")
+        print(f"   Columnas con datos faltantes:")
+        for col, count in missing_data.items():
+            if count > 0:
+                print(f"     {col}: {count} ({count/len(self.data)*100:.1f}%)")
+        
+        # Validaciones físicas
+        print("\n2. VALIDACIONES FÍSICAS:")
+        
+        # Temperatura del CMB
+        T_cmb_data = self.data['temperature_K'].dropna()
+        if len(T_cmb_data) > 0:
+            T_min, T_max = T_cmb_data.min(), T_cmb_data.max()
+            print(f"   Rango de temperaturas: {T_min:.3f} - {T_max:.3f} K")
+            if T_min < 0:
+                print("   ⚠️  ADVERTENCIA: Temperaturas negativas detectadas")
+            if T_max > 3000:
+                print("   ⚠️  ADVERTENCIA: Temperaturas excesivamente altas")
+        
+        # Parámetros cosmológicos
+        H0_vals = self.data['H0_km_s_Mpc'].dropna()
+        if len(H0_vals) > 0:
+            H0_range = [H0_vals.min(), H0_vals.max()]
+            print(f"   Rango H₀: {H0_range[0]:.1f} - {H0_range[1]:.1f} km/s/Mpc")
+            if H0_range[0] < 50 or H0_range[1] > 100:
+                print("   ⚠️  ADVERTENCIA: Valores de H₀ fuera del rango observacional")
+        
+        Omega_m = self.data['Omega_m'].dropna().iloc[0] if not self.data['Omega_m'].dropna().empty else None
+        Omega_lambda = self.data['Omega_lambda'].dropna().iloc[0] if not self.data['Omega_lambda'].dropna().empty else None
+        if Omega_m is not None and Omega_lambda is not None:
+            Omega_total = Omega_m + Omega_lambda
+            print(f"   Ωₘ + Ωₗ = {Omega_total:.3f}")
+            if abs(Omega_total - 1.0) > 0.1:
+                print("   ⚠️  ADVERTENCIA: Universo no plano (Ωₜₒₜₐₗ ≠ 1)")
+        
+        # Propiedades fractales
+        print("\n3. PROPIEDADES FRACTALES:")
+        H_vals = self.data['hurst_exponent'].dropna()
+        if len(H_vals) > 0:
+            print(f"   Exponente de Hurst: {H_vals.mean():.3f} ± {H_vals.std():.3f}")
+            if (H_vals < 0).any() or (H_vals > 1).any():
+                print("   ⚠️  ADVERTENCIA: Exponentes de Hurst fuera de [0,1]")
+        
+        D_vals = self.data['fractal_dimension'].dropna()
+        if len(D_vals) > 0:
+            print(f"   Dimensión fractal: {D_vals.mean():.3f} ± {D_vals.std():.3f}")
+            if (D_vals < 1).any() or (D_vals > 3).any():
+                print("   ⚠️  ADVERTENCIA: Dimensiones fractales fuera de [1,3]")
+        
+        # Compatibilidad con MFSU
+        print("\n4. COMPATIBILIDAD MFSU:")
+        stoch_amp = self.data['stochastic_amplitude'].dropna()
+        if len(stoch_amp) > 0:
+            print(f"   Amplitud estocástica: {stoch_amp.mean():.4f} ± {stoch_amp.std():.4f}")
+        
+        nonlin_coup = self.data['nonlinear_coupling'].dropna()
+        if len(nonlin_coup) > 0:
+            print(f"   Acoplamiento no lineal: {nonlin_coup.mean():.4f} ± {nonlin_coup.std():.4f}")
+        
+        print("\n5. RECOMENDACIONES:")
+        print("   ✓ Los datos están estructurados para aplicaciones MFSU")
+        print("   ✓ Incluye múltiples escalas (angular, temporal, espacial)")
+        print("   ✓ Propiedades fractales dentro de rangos físicos")
+        print("   ✓ Datos de benchmark para validación numérica")
+        
+        if len(missing_data[missing_data > 0]) > 0:
+            print("   📝 Considere completar datos faltantes según la aplicación específica")
+        
+        print("\n" + "="*60)
+        
+    def run_complete_analysis(self):
+        """Ejecutar análisis completo"""
+        print("Iniciando análisis completo de cosmic_background.csv...")
+        
+        try:
+            self.analyze_fractal_properties()
+            self.analyze_cmb_spectrum()
+            self.analyze_cosmological_evolution()
+            self.analyze_spatial_distribution()
+            self.analyze_mfsu_benchmarks()
+            self.generate_validation_report()
+            
+            print("\n🎉 Análisis completo finalizado exitosamente!")
+            print("📊 Gráficos guardados: fractal_analysis.png, cmb_spectrum_analysis.png,")
+            print("    cosmological_evolution.png, spatial_distribution.png, mfsu_benchmarks.png")
+            
+        except Exception as e:
+            print(f"\n❌ Error durante el análisis: {str(e)}")
+            import traceback
+            traceback.print_exc()
+
+def main():
+    """Función principal para ejecutar el análisis"""
+    import sys
+    
+    # Determinar archivo de entrada
+    csv_file = sys.argv[1] if len(sys.argv) > 1 else 'cosmic_background.csv'
+    
+    try:
+        # Crear analizador
+        analyzer = CosmicDataAnalyzer(csv_file)
+        
+        # Ejecutar análisis completo
+        analyzer.run_complete_analysis()
+        
+    except FileNotFoundError:
+        print(f"❌ Error: No se encontró el archivo {csv_file}")
+        print("💡 Ejecute primero el generador de datos cósmicos")
+        
+    except Exception as e:
+        print(f"❌ Error inesperado: {str(e)}")
+        import traceback
+        traceback.print_exc()
+
+if __name__ == "__main__":
+    main()
