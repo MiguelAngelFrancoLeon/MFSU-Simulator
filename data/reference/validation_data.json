@@ -1,0 +1,475 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "description": "Validation datasets for MFSU equation parameter fitting and model verification",
+    "equation": "∂ψ/∂t = α(-Δ)^(α/2)ψ + β ξ_H(x,t)ψ - γψ³ + f(x,t)",
+    "created": "2025-07-19",
+    "data_sources": ["experimental", "literature", "cross_validation", "synthetic"],
+    "quality_control": {
+      "noise_filtering": true,
+      "outlier_detection": true,
+      "uncertainty_quantification": true
+    }
+  },
+
+  "experimental_datasets": {
+    "superconductivity": {
+      "YBa2Cu3O7_resistance": {
+        "description": "Resistance vs Temperature data for YBa2Cu3O7 superconductor",
+        "source": "Laboratory measurements",
+        "material": "YBa2Cu3O7-δ",
+        "measurement_type": "four_point_resistance",
+        "temperature_range": [4.2, 300.0],
+        "data_points": 147,
+        "file_reference": "data/input/experimental/RvT_300K.csv",
+        "expected_parameters": {
+          "alpha": {"value": 1.8, "uncertainty": 0.1, "range": [1.5, 2.0]},
+          "beta": {"value": 0.05, "uncertainty": 0.01, "range": [0.01, 0.1]},
+          "gamma": {"value": 0.3, "uncertainty": 0.05, "range": [0.1, 0.8]},
+          "hurst": {"value": 0.75, "uncertainty": 0.05, "range": [0.6, 0.9]},
+          "critical_temperature": {"value": 92.5, "uncertainty": 1.0}
+        },
+        "validation_metrics": {
+          "r_squared": {"target": 0.95, "minimum": 0.9},
+          "rmse": {"target": 0.05, "maximum": 0.1},
+          "chi_squared": {"target": 1.0, "maximum": 2.0}
+        },
+        "data_format": {
+          "columns": ["temperature_K", "resistance_ohm", "uncertainty_ohm"],
+          "units": {"temperature": "Kelvin", "resistance": "Ohm"}
+        }
+      },
+
+      "Nb3Sn_magnetic_response": {
+        "description": "Magnetic field penetration in Nb3Sn wire",
+        "source": "Flux pinning experiments",
+        "material": "Nb3Sn",
+        "measurement_type": "magnetization_vs_field",
+        "field_range": [0.0, 15.0],
+        "data_points": 89,
+        "expected_parameters": {
+          "alpha": {"value": 1.6, "uncertainty": 0.08, "range": [1.4, 1.8]},
+          "beta": {"value": 0.08, "uncertainty": 0.02, "range": [0.02, 0.15]},
+          "gamma": {"value": 0.5, "uncertainty": 0.1, "range": [0.2, 1.0]},
+          "hurst": {"value": 0.8, "uncertainty": 0.05, "range": [0.7, 0.9]},
+          "critical_field": {"value": 12.8, "uncertainty": 0.5}
+        },
+        "validation_metrics": {
+          "r_squared": {"target": 0.92, "minimum": 0.85},
+          "rmse": {"target": 0.08, "maximum": 0.15}
+        }
+      }
+    },
+
+    "fluid_dynamics": {
+      "turbulent_channel_flow": {
+        "description": "Velocity profiles in turbulent channel flow",
+        "source": "PIV measurements",
+        "reynolds_number": 5600,
+        "measurement_type": "velocity_field",
+        "spatial_resolution": 0.1,
+        "data_points": 2048,
+        "file_reference": "data/input/experimental/turbulence_data.csv",
+        "expected_parameters": {
+          "alpha": {"value": 1.7, "uncertainty": 0.1, "range": [1.5, 1.9]},
+          "beta": {"value": 0.12, "uncertainty": 0.03, "range": [0.05, 0.2]},
+          "gamma": {"value": 0.15, "uncertainty": 0.05, "range": [0.05, 0.3]},
+          "hurst": {"value": 0.85, "uncertainty": 0.05, "range": [0.7, 0.95]},
+          "friction_velocity": {"value": 0.95, "uncertainty": 0.05}
+        },
+        "validation_metrics": {
+          "r_squared": {"target": 0.88, "minimum": 0.8},
+          "energy_spectrum_match": {"target": 0.9, "minimum": 0.8}
+        },
+        "data_format": {
+          "columns": ["x_pos", "y_pos", "u_velocity", "v_velocity", "uncertainty"],
+          "units": {"position": "channel_height", "velocity": "friction_velocity"}
+        }
+      },
+
+      "shock_tube_experiment": {
+        "description": "Pressure evolution in shock tube",
+        "source": "High-speed pressure measurements",
+        "mach_number": 2.1,
+        "measurement_type": "pressure_time_series",
+        "sampling_rate": 1000000,
+        "data_points": 10000,
+        "expected_parameters": {
+          "alpha": {"value": 1.9, "uncertainty": 0.1, "range": [1.7, 2.1]},
+          "beta": {"value": 0.03, "uncertainty": 0.01, "range": [0.01, 0.08]},
+          "gamma": {"value": 0.25, "uncertainty": 0.05, "range": [0.1, 0.5]},
+          "shock_speed": {"value": 680.0, "uncertainty": 10.0}
+        }
+      }
+    },
+
+    "cosmology": {
+      "cmb_power_spectrum": {
+        "description": "Cosmic microwave background angular power spectrum",
+        "source": "Planck satellite data (simplified)",
+        "measurement_type": "angular_power_spectrum",
+        "multipole_range": [2, 2500],
+        "data_points": 215,
+        "file_reference": "data/input/experimental/cosmic_background.csv",
+        "expected_parameters": {
+          "alpha": {"value": 1.4, "uncertainty": 0.05, "range": [1.2, 1.6]},
+          "beta": {"value": 0.02, "uncertainty": 0.005, "range": [0.01, 0.05]},
+          "gamma": {"value": 0.01, "uncertainty": 0.002, "range": [0.005, 0.02]},
+          "hurst": {"value": 0.9, "uncertainty": 0.02, "range": [0.85, 0.95]},
+          "spectral_index": {"value": 0.965, "uncertainty": 0.004}
+        },
+        "validation_metrics": {
+          "chi_squared": {"target": 1.0, "maximum": 1.5},
+          "spectral_index_match": {"target": 0.001, "maximum": 0.01}
+        }
+      }
+    }
+  },
+
+  "synthetic_validation_datasets": {
+    "parameter_recovery_tests": {
+      "known_parameter_set_1": {
+        "description": "Test parameter recovery with known synthetic data",
+        "true_parameters": {
+          "alpha": 1.7,
+          "beta": 0.08,
+          "gamma": 0.2,
+          "hurst": 0.75
+        },
+        "noise_level": 0.01,
+        "data_points": 1000,
+        "expected_recovery_accuracy": {
+          "alpha": 0.05,
+          "beta": 0.02,
+          "gamma": 0.05,
+          "hurst": 0.03
+        }
+      },
+
+      "known_parameter_set_2": {
+        "description": "High noise synthetic data test",
+        "true_parameters": {
+          "alpha": 1.5,
+          "beta": 0.15,
+          "gamma": 0.4,
+          "hurst": 0.8
+        },
+        "noise_level": 0.1,
+        "data_points": 2000,
+        "expected_recovery_accuracy": {
+          "alpha": 0.1,
+          "beta": 0.05,
+          "gamma": 0.1,
+          "hurst": 0.08
+        }
+      },
+
+      "extreme_parameter_set": {
+        "description": "Test with extreme parameter values",
+        "true_parameters": {
+          "alpha": 0.8,
+          "beta": 0.5,
+          "gamma": 1.0,
+          "hurst": 0.95
+        },
+        "noise_level": 0.05,
+        "data_points": 5000,
+        "expected_recovery_accuracy": {
+          "alpha": 0.15,
+          "beta": 0.1,
+          "gamma": 0.2,
+          "hurst": 0.05
+        }
+      }
+    },
+
+    "cross_validation_sets": {
+      "k_fold_validation": {
+        "description": "5-fold cross validation datasets",
+        "num_folds": 5,
+        "total_samples": 10000,
+        "parameter_ranges": {
+          "alpha": [1.0, 2.0],
+          "beta": [0.01, 0.3],
+          "gamma": [0.05, 1.0],
+          "hurst": [0.5, 0.95]
+        },
+        "expected_metrics": {
+          "training_r2": {"target": 0.9, "minimum": 0.85},
+          "validation_r2": {"target": 0.85, "minimum": 0.8},
+          "generalization_gap": {"target": 0.05, "maximum": 0.1}
+        }
+      }
+    }
+  },
+
+  "literature_comparison_data": {
+    "fractional_diffusion_benchmarks": {
+      "metzler_klafter_2000": {
+        "description": "Fractional diffusion equation solutions",
+        "reference": "Physics Reports 339, 1-77 (2000)",
+        "parameter_set": {
+          "alpha": 1.5,
+          "beta": 0.0,
+          "gamma": 0.0,
+          "hurst": 0.5
+        },
+        "comparison_metrics": {
+          "msd_scaling": {"expected": "t^(α/2)", "tolerance": 0.05},
+          "pdf_shape": {"expected": "stretched_exponential", "tolerance": 0.1}
+        }
+      },
+
+      "barkai_metzler_2000": {
+        "description": "Anomalous diffusion in continuous time random walks",
+        "reference": "Physical Review E 61, 132 (2000)",
+        "parameter_set": {
+          "alpha": 0.8,
+          "beta": 0.1,
+          "gamma": 0.0,
+          "hurst": 0.7
+        },
+        "comparison_metrics": {
+          "waiting_time_distribution": {"expected": "power_law", "tolerance": 0.1},
+          "displacement_statistics": {"expected": "levy_stable", "tolerance": 0.15}
+        }
+      }
+    },
+
+    "stochastic_pde_benchmarks": {
+      "da_prato_zabczyk_2014": {
+        "description": "Stochastic evolution equations",
+        "reference": "Cambridge University Press (2014)",
+        "parameter_set": {
+          "alpha": 2.0,
+          "beta": 0.1,
+          "gamma": 0.0,
+          "hurst": 0.5
+        },
+        "comparison_metrics": {
+          "covariance_function": {"expected": "exponential", "tolerance": 0.08},
+          "stationary_distribution": {"expected": "gaussian", "tolerance": 0.1}
+        }
+      }
+    },
+
+    "nonlinear_dynamics_benchmarks": {
+      "sulem_sulem_1999": {
+        "description": "Nonlinear Schrödinger equations",
+        "reference": "Applied Mathematical Sciences 139, Springer (1999)",
+        "parameter_set": {
+          "alpha": 2.0,
+          "beta": 0.0,
+          "gamma": 1.0,
+          "hurst": 0.5
+        },
+        "comparison_metrics": {
+          "soliton_stability": {"expected": "stable", "tolerance": 0.05},
+          "collision_dynamics": {"expected": "elastic", "tolerance": 0.1}
+        }
+      }
+    }
+  },
+
+  "statistical_validation_criteria": {
+    "goodness_of_fit_tests": {
+      "kolmogorov_smirnov": {
+        "description": "Test for distribution matching",
+        "critical_value": 0.05,
+        "power": 0.8
+      },
+      "anderson_darling": {
+        "description": "Test for normality of residuals",
+        "critical_value": 0.05,
+        "sensitivity": "tail_behavior"
+      },
+      "ljung_box": {
+        "description": "Test for autocorrelation in residuals",
+        "critical_value": 0.05,
+        "lag_range": [1, 20]
+      }
+    },
+
+    "parameter_estimation_metrics": {
+      "maximum_likelihood": {
+        "convergence_tolerance": 1e-6,
+        "maximum_iterations": 1000,
+        "confidence_interval": 0.95
+      },
+      "bayesian_inference": {
+        "prior_distributions": {
+          "alpha": {"type": "uniform", "bounds": [0.5, 2.5]},
+          "beta": {"type": "log_uniform", "bounds": [0.001, 1.0]},
+          "gamma": {"type": "uniform", "bounds": [0.0, 2.0]},
+          "hurst": {"type": "uniform", "bounds": [0.5, 1.0]}
+        },
+        "mcmc_samples": 10000,
+        "burn_in": 2000,
+        "convergence_diagnostic": "gelman_rubin"
+      }
+    },
+
+    "model_selection_criteria": {
+      "aic": {
+        "description": "Akaike Information Criterion",
+        "penalty_factor": 2,
+        "comparison_threshold": 2.0
+      },
+      "bic": {
+        "description": "Bayesian Information Criterion", 
+        "penalty_factor": "log(n)",
+        "comparison_threshold": 6.0
+      },
+      "cross_validation_score": {
+        "description": "Cross-validated prediction error",
+        "folds": 5,
+        "repetitions": 10
+      }
+    }
+  },
+
+  "uncertainty_quantification": {
+    "measurement_uncertainties": {
+      "systematic_errors": {
+        "instrument_calibration": 0.02,
+        "temperature_drift": 0.01,
+        "electromagnetic_interference": 0.005
+      },
+      "statistical_errors": {
+        "thermal_noise": "sqrt(measurements)",
+        "digitization_noise": 0.001,
+        "sampling_variability": "1/sqrt(n)"
+      }
+    },
+
+    "model_uncertainties": {
+      "parameter_uncertainty": {
+        "propagation_method": "monte_carlo",
+        "samples": 1000,
+        "correlation_matrix": true
+      },
+      "structural_uncertainty": {
+        "alternative_models": ["pure_fractional", "pure_stochastic", "deterministic"],
+        "model_averaging": "bayesian"
+      }
+    }
+  },
+
+  "performance_benchmarks": {
+    "computational_efficiency": {
+      "small_grid": {
+        "grid_size": [100, 100],
+        "time_steps": 1000,
+        "target_runtime": 10.0,
+        "memory_usage": "< 1GB"
+      },
+      "medium_grid": {
+        "grid_size": [500, 500],
+        "time_steps": 5000,
+        "target_runtime": 300.0,
+        "memory_usage": "< 8GB"
+      },
+      "large_grid": {
+        "grid_size": [1000, 1000],
+        "time_steps": 10000,
+        "target_runtime": 3600.0,
+        "memory_usage": "< 32GB"
+      }
+    },
+
+    "numerical_accuracy": {
+      "convergence_rates": {
+        "spatial_order": 2,
+        "temporal_order": 1,
+        "tolerance": 1e-3
+      },
+      "conservation_properties": {
+        "mass_conservation": 1e-12,
+        "energy_conservation": 1e-10,
+        "probability_conservation": 1e-14
+      }
+    }
+  },
+
+  "data_quality_metrics": {
+    "completeness": {
+      "missing_data_threshold": 0.05,
+      "interpolation_method": "cubic_spline"
+    },
+    "consistency": {
+      "physical_bounds_check": true,
+      "monotonicity_check": true,
+      "outlier_detection": "isolation_forest"
+    },
+    "reliability": {
+      "measurement_repeatability": 0.95,
+      "cross_instrument_agreement": 0.9
+    }
+  },
+
+  "validation_protocols": {
+    "automated_testing": {
+      "regression_tests": {
+        "frequency": "daily",
+        "tolerance_degradation": 0.1,
+        "alert_threshold": 0.05
+      },
+      "integration_tests": {
+        "full_pipeline": true,
+        "data_consistency": true,
+        "performance_monitoring": true
+      }
+    },
+
+    "manual_validation": {
+      "expert_review": {
+        "frequency": "monthly",
+        "checklist": "validation_checklist.md",
+        "sign_off_required": true
+      },
+      "literature_comparison": {
+        "frequency": "quarterly",
+        "scope": "new_publications",
+        "update_benchmarks": true
+      }
+    }
+  },
+
+  "references": [
+    {
+      "id": "metzler_klafter_2000",
+      "title": "The random walk's guide to anomalous diffusion: a fractional dynamics approach",
+      "authors": ["Metzler, R.", "Klafter, J."],
+      "journal": "Physics Reports",
+      "volume": 339,
+      "pages": "1-77",
+      "year": 2000
+    },
+    {
+      "id": "barkai_metzler_2000", 
+      "title": "From continuous time random walks to the fractional Fokker-Planck equation",
+      "authors": ["Barkai, E.", "Metzler, R.", "Klafter, J."],
+      "journal": "Physical Review E",
+      "volume": 61,
+      "pages": "132-138",
+      "year": 2000
+    },
+    {
+      "id": "da_prato_zabczyk_2014",
+      "title": "Stochastic Equations in Infinite Dimensions",
+      "authors": ["Da Prato, G.", "Zabczyk, J."],
+      "publisher": "Cambridge University Press",
+      "edition": "2nd",
+      "year": 2014
+    },
+    {
+      "id": "sulem_sulem_1999",
+      "title": "The Nonlinear Schrödinger Equation: Self-Focusing and Wave Collapse",
+      "authors": ["Sulem, C.", "Sulem, P.L."],
+      "publisher": "Springer",
+      "series": "Applied Mathematical Sciences",
+      "volume": 139,
+      "year": 1999
+    }
+  ]
+}
